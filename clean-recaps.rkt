@@ -2,8 +2,9 @@
 
 (require csv-reading
          csv-writing)
-(require racket/runtime-path
-         )
+
+(require "replacement-scoring.rkt"
+         racket/runtime-path)
 
 (module+ test
   (require rackunit))
@@ -98,11 +99,32 @@
 
 ;; Year (Setof Pick) -> Table
 (define (build-year-table year picks)
+  (displayln year)
   (define ordered-picks (sort (set->list picks) pick>?))
-  (list* (list year ""        ""          ""        "")
-         (list "By" "Player" "Position" "Price" "Nominated")
+  (define scoring (import-yearly-scoring year))
+  (list* (list year ""        ""          ""        ""       ""     ""        ""   )
+         (list "By" "Player" "Position" "Price" "Nominated" "PPG" "PPGOR" "PPGOR/$")
          (for/list ([p (in-list ordered-picks)])
-           (list (pick-by p) (pick-who p) (pick-pos p) (pick-amt p) (pick-num p)))))
+           (define who (pick-who p))
+           (define pos (pick-pos p))
+           (define amt (pick-amt p))
+           (define-values (ppg ppgor ppgor/$)
+             (cond
+               [(positional? pos)
+                (match-define (list replacement-ppg player#) (hash-ref scoring pos))
+                (define PPG (lookup-scoring player# year who))
+                (define PPGOR (- PPG replacement-ppg))
+                (define value (if (> PPGOR 0)
+                                  (* 100 (/ (* PPGOR PPGOR) amt))
+                                  (- amt)))
+                (define PPGOR/$ value)
+                (values PPG PPGOR PPGOR/$)]
+               [else
+                (values 0 0 0)]))
+           (list (pick-by p) who pos amt (pick-num p) ppg ppgor ppgor/$))))
+
+(define (positional? pos)
+  (member pos '("QB" "WR" "TE" "RB")))
 
 ;; (Listof Table) -> Table
 (define (append-tables tables)
