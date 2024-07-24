@@ -139,10 +139,22 @@
           tbl)))
   (apply map (lambda tbls (apply append tbls)) (add-between normalized-tables mt-col)))
 
+;; (Setof Pick) Int -> Void
+(define (report-thrifty-teams picks year threshold)
+  (define picks* (set->list picks))
+  (define teams (group-by pick-by picks*))
+  (for ([team (in-list teams)])
+    (define max-bid (apply max (map pick-amt team)))
+    (when (<= max-bid threshold)
+      (printf "~a below ~a in ~a\n" (pick-by (first team)) threshold year))))
+
 (module+ main
   (define rows (csv->list (open-input-file draft-recaps)))
   (define years (transpose rows))
   (define year-picks (map process-year years))
+  #;(for ([yr (in-list year-picks)])
+    (define year (first yr))
+    (report-thrifty-teams (second yr) year 40))
   (define year-tables
     (for/list ([yr (in-list year-picks)])
       (define year (first yr))

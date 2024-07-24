@@ -80,6 +80,9 @@
                     "Phillip Dorsett" "Phillip Dorsett II"
                     "Steve Smith Sr." "Steve Smith"
                     "Daniel Herron" "Dan Herron"
+                    "Gardner Minshew" "Gardner Minshew II"
+                    "Deebo Samuel" "Deebo Samuel Sr."
+                    "Marquise Brown" "Hollywood Brown"
                     ))
 
 (define (lookup-scoring player# year name)
@@ -140,4 +143,5 @@
     [(2015 "Kevin White")
      0]
     [(_ _)
-     (hash-ref player# name*)]))
+     (or (hash-ref player# name #f)
+         (hash-ref player# name*))]))
